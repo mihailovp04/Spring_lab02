@@ -1,12 +1,12 @@
 package com.example.librarymanagement.service;
 
+import com.example.librarymanagement.dao.AuthorDao;
+import com.example.librarymanagement.dao.BookDao;
+import com.example.librarymanagement.dao.CategoryDao;
+import com.example.librarymanagement.dao.PublisherDao;
 import com.example.librarymanagement.dto.BookDTO;
 import com.example.librarymanagement.entity.Book;
-import com.example.librarymanagement.entity.Category; // Добавляем импорт
-import com.example.librarymanagement.repository.AuthorRepository;
-import com.example.librarymanagement.repository.BookRepository;
-import com.example.librarymanagement.repository.CategoryRepository;
-import com.example.librarymanagement.repository.PublisherRepository;
+import com.example.librarymanagement.entity.Category;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,34 +15,36 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class BookService {
-    private final BookRepository bookRepository;
-    private final AuthorRepository authorRepository;
-    private final PublisherRepository publisherRepository;
-    private final CategoryRepository categoryRepository;
+    private final BookDao bookDao;
+    private final AuthorDao authorDao;
+    private final PublisherDao publisherDao;
+    private final CategoryDao categoryDao;
 
     public BookDTO create(BookDTO dto) {
         Book book = new Book();
         book.setTitle(dto.getTitle());
-        book.setAuthor(authorRepository.findById(dto.getAuthorId()).orElseThrow());
-        book.setPublisher(publisherRepository.findById(dto.getPublisherId()).orElseThrow());
-        book.setCategories(categoryRepository.findAllById(dto.getCategoryIds()));
-        book = bookRepository.save(book);
+        book.setAuthor(authorDao.findById(dto.getAuthorId()));
+        book.setPublisher(publisherDao.findById(dto.getPublisherId()));
+        book.setCategories(categoryDao.findAllByIds(dto.getCategoryIds()));
+        book = bookDao.save(book);
         dto.setId(book.getId());
         return dto;
     }
 
     public BookDTO update(Long id, BookDTO dto) {
-        Book book = bookRepository.findById(id).orElseThrow();
+        Book book = bookDao.findById(id);
+        if (book == null) throw new RuntimeException("Book not found");
         book.setTitle(dto.getTitle());
-        book.setAuthor(authorRepository.findById(dto.getAuthorId()).orElseThrow());
-        book.setPublisher(publisherRepository.findById(dto.getPublisherId()).orElseThrow());
-        book.setCategories(categoryRepository.findAllById(dto.getCategoryIds()));
-        bookRepository.save(book);
+        book.setAuthor(authorDao.findById(dto.getAuthorId()));
+        book.setPublisher(publisherDao.findById(dto.getPublisherId()));
+        book.setCategories(categoryDao.findAllByIds(dto.getCategoryIds()));
+        bookDao.update(book);
         return dto;
     }
 
     public BookDTO get(Long id) {
-        Book book = bookRepository.findById(id).orElseThrow();
+        Book book = bookDao.findById(id);
+        if (book == null) throw new RuntimeException("Book not found");
         BookDTO dto = new BookDTO();
         dto.setId(book.getId());
         dto.setTitle(book.getTitle());
@@ -53,7 +55,7 @@ public class BookService {
     }
 
     public List<BookDTO> getAll() {
-        return bookRepository.findAll().stream().map(book -> {
+        return bookDao.findAll().stream().map(book -> {
             BookDTO dto = new BookDTO();
             dto.setId(book.getId());
             dto.setTitle(book.getTitle());
@@ -65,6 +67,6 @@ public class BookService {
     }
 
     public void delete(Long id) {
-        bookRepository.deleteById(id);
+        bookDao.delete(id);
     }
 }
